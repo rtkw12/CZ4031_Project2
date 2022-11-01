@@ -4,80 +4,104 @@ https://gitlab.com/postgres/postgres/blob/master/src/include/nodes/plannodes.h
 https://docs.gitlab.com/ee/development/understanding_explain_plans.html
 """
 
-# Create class to define constants for use to format the redrered QEP annotation onto the web interface.
 class FontFormat:
+    """
+        Class to define constants, which are used for formating the annotations
+    """
     BOLD_START = "<b>"
     BOLD_END = "</b>"
     ITALIC_START = "<em>"
     ITALIC_END = "</em>"
 
-# To make words bold
+
 def make_bold(string):
+    """
+        To make words bold
+    """
     return FontFormat.BOLD_START + string + FontFormat.BOLD_END
 
-
-# To italicise words
 def make_italic(string):
+    """
+         To italicise words
+    """
     return FontFormat.ITALIC_START + string + FontFormat.ITALIC_END
 
-
-# Default Annotation if none of the node types are identified in the annotation functions listed below
 def default_annotation(query_plan):
+    """
+         Default Annotation if none of the node types are identified in the annotation functions listed below
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation is performed."
 
 
-# Append
 def append_annotation(query_plan, comparison):
+    """
+        Generate annotation for append
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation combines the results of the child sub-operations."
 
-
-# Function Scan
 def func_scan_annotation(query_plan, comparison):
+    """
+        Generate annotation for function scan
+    """
     return f"The function {make_italic(query_plan['Function Name'])} is executed and the set of records are returned."
 
-
-# Limit
 def limit_annotation(query_plan, comparison):
+    """
+        Generate annotation for limit
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation takes {make_bold(str(query_plan['Plan Rows']))} records and disregard the remaining records."
 
 
-# Subquery Scan
 def subquery_scan_annotation(query_plan, comparison):
+    """
+        Generate annotation for subquery scan
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation reads on the results from a subquery."
 
-
-# Values Scan
 def value_scan_annotation(query_plan, comparison):
+    """
+        Generate annotation for value scan
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation reads the given constant values from the query."
 
 
-# Materialize
 def materialize_annotation(query_plan, comparison):
+    """
+        Generate annotation for materialize
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation stores the results of child operations in memory for faster access by parent operations."
 
-
-# Nested Loop Join
 def nl_join_annotation(query_plan, comparison):
+    """
+        Generate annotation for Nested Loop Join
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation implements a join or lookup where the first child node is run once, then for every row it produces, its partner is looked up in the second node."
 
-
-# Unique, removes duplicates
 def unique_annotation(query_plan, comparison):
+    """
+        Generates annotation for unique which removes duplicates
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation removes duplicates from a sorted result set."
 
 
-# Hash function
 def hash_func_annotation(query_plan, comparison):
+    """
+        Generates annotation for hash function
+    """
     return f"The {make_italic(query_plan['Node Type'])} function hashes the query rows into memory, for use by its parent operation."
 
-
-# Gather Merge
 def gather_merge_annotation(query_plan, comparison):
+    """
+        Generates annotation for gather merge
+    """
     return f"The {make_italic(query_plan['Node Type'])} operation combines the output table from sub-operations by executing the operation in parallel."
 
 
-# Aggregate
 def aggregate_annotation(query_plan, comparison):
+
+    """
+        Generates annotation for aggregate
+    """
 
     # Obtain strategy from query plan
     strategy = query_plan["Strategy"]
@@ -125,8 +149,11 @@ def aggregate_annotation(query_plan, comparison):
         raise ValueError("Annotation does not work: " + strategy)
 
 
-# CTE Scan
+
 def cte_scan_annotation(query_plan, comparison):
+    """
+        Generates annotation for CTE scan
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation is performed on the table {make_bold(str(query_plan['CTE Name']))} which the results are stored in memory for use later. "
 
     # Get the index condition and remove unnecessary strings
@@ -145,8 +172,10 @@ def cte_scan_annotation(query_plan, comparison):
     return result
 
 
-# Group
 def group_annotation(query_plan, comparison):
+    """
+        Generates annotation for group
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation groups the results from the previous operation together with the following keys: "
 
     # Obtain the attributes that the records are grouped by
@@ -164,8 +193,10 @@ def group_annotation(query_plan, comparison):
     return result
 
 
-# Index Scan
 def index_scan_annotation(query_plan, comparison):
+    """
+        Generates annotation for index scan
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation scans the index for rows"
 
     # Get the index condition and remove unnecessary strings
@@ -183,8 +214,10 @@ def index_scan_annotation(query_plan, comparison):
     return result
 
 
-# Index-Only Scan
 def index_only_scan_annotation(query_plan, comparison):
+    """
+        Generates annotation for index-only scan
+    """
     result = f"The {make_italic(query_plan['Node Type'])} function is conducted using an index table {make_bold(query_plan['Index Name'])}"
 
     # Get the index condition and remove unnecessary strings
@@ -202,8 +235,10 @@ def index_only_scan_annotation(query_plan, comparison):
     return result
 
 
-# Merge Join
 def merge_join_annotation(query_plan, comparison):
+    """
+        Generates annotation for Merge Join
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation joins the results that have been sorted on join keys from sub-operations"
 
     # Get the merge condition and remove unnecessary strings
@@ -221,8 +256,10 @@ def merge_join_annotation(query_plan, comparison):
     return result
 
 
-# SetOp
 def set_operation_annotation(query_plan, comparison):
+    """
+        Generates annotation for setOp
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation finds the "
 
     # Get the command
@@ -240,9 +277,10 @@ def set_operation_annotation(query_plan, comparison):
 
     return result
 
-
-# Sequential Scan
 def sequential_scan_annotation(query_plan, comparison):
+    """
+        Generates annotation for sequential scan
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation performs a scan on relation "
 
     # Get the relation name from query plan
@@ -263,8 +301,11 @@ def sequential_scan_annotation(query_plan, comparison):
     return result
 
 
-# Sort
+
 def sort_annotation(query_plan, comparison):
+    """
+        Generates annotation for sort
+    """
     result = (
         f"The {make_italic(query_plan['Node Type'])} operation sorts the rows "
     )
@@ -291,9 +332,10 @@ def sort_annotation(query_plan, comparison):
 
     return result
 
-
-# Hash Join
 def hash_join_annotation(query_plan, comparison):
+    """
+        Generates annotation for hash join
+    """
     result = f"The {make_italic(query_plan['Node Type'])} operation joins the results from the previous operations using a hash {make_bold(query_plan['Join Type'])} {make_bold('Join')}"
 
     # Get the hash condition and remove unnecessary strings
