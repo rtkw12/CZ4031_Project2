@@ -5,8 +5,18 @@ from random import random
 import matplotlib.pyplot as plt
 import networkx as nx
 from annotation import *
-from project import config
 
+
+class Config:
+    def __init__(self):
+        self.POSTGRES_HOST = "localhost"
+        self.POSTGRES_PORT = 5432
+        self.POSTGRES_DBNAME = "TPC-H"
+        self.POSTGRES_USERNAME = "postgres"
+        self.POSTGRES_PASSWORD = "password123"
+        self.FLASK_ENV = "development"
+
+        self.project_root = os.getcwd()
 
 class Node:
     def __init__(self, query_plan, comparison):
@@ -36,7 +46,7 @@ class Node:
 
 
 class QueryPlan:
-    def __init__(self, query, comparison : dict):
+    def __init__(self, query, comparison):
         """Initialises the root node with the root query plan.
         Constructs the graph and calculate attributes of the QEP:
         1. Total cost
@@ -50,14 +60,14 @@ class QueryPlan:
         """
         self.graph = nx.DiGraph()
         self.root = Node(query, comparison)
-        self.construct_graph(self.root)
+        self.construct_graph(self.root, comparison)
         self.total_cost = self.calculate_total_cost()
         self.plan_rows = self.calculate_plan_rows()
         self.num_seq_scan_nodes = self.calculate_num_nodes("Seq Scan")
         self.num_index_scan_nodes = self.calculate_num_nodes("Index Scan")
         self.explanation = self.create_explanation(self.root)
 
-    def construct_graph(self, root):
+    def construct_graph(self, root, comparison):
         """Constructs the graph recursively by forming an edge between each node
         and each of its child nodes.
 
@@ -66,9 +76,9 @@ class QueryPlan:
         """
         self.graph.add_node(root)
         for child in root.plans:
-            child_node = Node(child)
+            child_node = Node(child, comparison)
             self.graph.add_edge(root, child_node)
-            self.construct_graph(child_node)
+            self.construct_graph(child_node, comparison)
 
     def create_explanation(self, node: Node) -> str:
         """Creates explanation of the entire QEP recursively by combining the explanations
@@ -132,7 +142,7 @@ class QueryPlan:
             str: File name of graph
         """
         graph_name = f"qep_{str(time.time())}.png"
-        dev_config = config()
+        dev_config = Config()
         file_name = os.path.join(dev_config.project_root, "static", graph_name)
         plot_formatter_position = get_tree_node_pos(self.graph, self.root)
         node_labels = {x: str(x) for x in self.graph.nodes}

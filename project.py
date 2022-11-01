@@ -52,14 +52,3 @@ def explain():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-
-class config:
-    def __init__(self):
-        self.POSTGRES_HOST = "localhost"
-        self.POSTGRES_PORT = 5432
-        self.POSTGRES_DBNAME = "TPC-H"
-        self.POSTGRES_USERNAME = "postgres"
-        self.POSTGRES_PASSWORD = "password"
-        self.FLASK_ENV = "development"
-
-        self.project_root = os.getcwd()
