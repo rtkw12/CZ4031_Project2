@@ -31,6 +31,55 @@ def validate(query):
     return output
 
 
+class SimplifiedPlan:
+    def __init__(self, node: str, condition: dict, cost: float):
+        self.node = node
+        self.condition = condition
+        self.cost = cost
+
+    def compare_type(self, plan):
+        """
+        Compares the type of node (Index or Seq / Hash or Nested Loop)
+        Args:
+            plan (SimplifiedPlan): plan to compare to
+        Returns:
+            bool: whether it is of different type
+        """
+
+        node_string = self.node.split(" ")
+        aqp_string = plan.node.split(" ")
+        if len(node_string) > 0 and len(aqp_string) > 0:
+            # If the (Index and Seq/ Hash Join and Nested Loop) conditions match return false
+            if node_string[0] != aqp_string[0]:
+                return True
+        return False
+
+    def compare_node(self, plan):
+        """
+        Method to check whether it needs to compare the values (Scan / Join)
+        Args:
+            plan (SimplifiedPlan): the plan that is being compared to
+        Returns:
+            bool: True if the types are equal else false
+        """
+        node_string = self.node.split(" ")
+        aqp_string = plan.node.split(" ")
+
+        if len(node_string) > 1 and len(aqp_string) > 1:
+            print("QEP:", self.condition, ": ", self.node)
+            print("AQP:", plan.condition, ": ", plan.node)
+            # If the (Scan/ Join/ Loop) conditions match return true
+            if node_string[1] == aqp_string[1]:
+                return True
+            elif (node_string[1] == "Loop" and aqp_string[1] == "Join") or (
+                    node_string[1] == "Join" and aqp_string[1] == "Loop"):
+                return True
+        return False
+
+    def cost_difference(self, cost):
+        return self.cost - cost
+
+
 class QueryProcessor:
     def __init__(self, db_config):
         self.conn = self.start_db_connection(db_config)
@@ -58,6 +107,7 @@ class QueryProcessor:
             Returns:
                 function: Wrapped function
         """
+
         @wraps(func)
         def inner_func(self, *args, **kwargs):
             try:
@@ -91,23 +141,27 @@ class QueryProcessor:
         """
         query_explainer = "EXPLAIN (FORMAT JSON, SETTINGS ON) " + query
         # Do default settings first
-        query_plan_dict: dict = self.execute_query(query_explainer, DEFAULT_SEQ_PAGE_COST, DEFAULT_RAND_PAGE_COST)
-        qep_plan = self.retrieve_plans(query_plan_dict)
+        qep_plan: dict = self.execute_query(query_explainer, DEFAULT_SEQ_PAGE_COST, DEFAULT_RAND_PAGE_COST)
 
         # First AQP
-        query_plan_dict2: dict = self.execute_query(query_explainer, DEFAULT_SEQ_PAGE_COST + 2,
-                                                    DEFAULT_RAND_PAGE_COST + 2)
-        aqp_plan = self.retrieve_plans(query_plan_dict2)
-        comparison_dict = self.compare_query(qep_plan, aqp_plan)
+        aqp_plan1: dict = self.execute_query(query_explainer, DEFAULT_SEQ_PAGE_COST + 10,
+                                             DEFAULT_RAND_PAGE_COST + 2)
+        comparison1 = self.scan_tree(qep_plan, aqp_plan1)
 
         # Second AQP
-        query_plan_dict3: dict = self.execute_query(query_explainer, DEFAULT_SEQ_PAGE_COST + 3,
-                                                    DEFAULT_RAND_PAGE_COST - 4)
-        aqp_plan2 = self.retrieve_plans(query_plan_dict3)
-        comparison_dict = self.compare_query(qep_plan, aqp_plan)
-        print(comparison_dict)
+        aqp_plan2: dict = self.execute_query(query_explainer, DEFAULT_SEQ_PAGE_COST + 5,
+                                             DEFAULT_RAND_PAGE_COST)
 
-        return QueryPlan(query_plan_dict, comparison_dict)
+        # Do the comparisons
+        comparison2 = self.scan_tree(qep_plan, aqp_plan2)
+
+        # Combine the dictionaries
+        comparison_dict = {}
+        comparison_dict = self.add_comparisons(comparison_dict, comparison1)
+        comparison_dict = self.add_comparisons(comparison_dict, comparison2)
+
+        print(comparison_dict)
+        return QueryPlan(qep_plan, comparison_dict)
 
     @single_transaction
     def query_valid(self, query: str):
@@ -134,7 +188,7 @@ class QueryProcessor:
             seq_cost (float): sequential scan cost of database
             rand_cost (float): random scan cost of database
         Returns:
-            dict: results of the explain and what plans were selected
+            dict: results of the EXPLAIN function and what plans were selected
         """
         self.change_parameters(seq_cost, rand_cost)
         self.cursor.execute(query)
@@ -142,22 +196,72 @@ class QueryProcessor:
         query_plan_dict: dict = plan[0][0][0]["Plan"]
         return query_plan_dict
 
-    def retrieve_plans(self, query_dict: dict, index=0, boom=0) -> list:
+    def scan_tree(self, qep: dict, aqp: dict) -> dict:
+        """
+        Scan the entire tree to find the differences
+        Args:
+            qep: the best Query Execution Plan
+            aqp: a Alternate Query Plan
+
+        Returns:
+            dict: comparisons that were indexed
+        """
+        comparisons = {}
+
+        # Check if qep and aqp has "plans"
+        qep_plans = qep.get("Plans")
+        aqp_plans = aqp.get("Plans")
+
+        if qep_plans is not None and aqp_plans is not None:
+            # Scan plans
+            for qep_plan, aqp_plan in zip(qep_plans, aqp_plans):
+                result = self.scan_tree(qep_plan, aqp_plan)
+                # Update any results if any
+                if len(result) > 0:
+                    comparisons.update(result)
+
+        # Scan through current plan to check whether there are differences
+        comparison_string, condition = self.compare_query_plan(qep, aqp)
+
+        if comparison_string is not None:
+            hash_value = " "
+            # Use the condition as the hash (key)
+            if len(condition) > 0:
+                if type(condition) is dict:
+                    dict_values = list(condition.values())
+                    hash_value = dict_values[0]
+                elif type(condition) is list:
+                    hash_value = condition[0][0]
+            # Place into dictionary
+            comparisons[hash_value] = [comparison_string]
+
+        return comparisons
+
+    def add_comparisons(self, comparison_dict: dict, comparison: dict) -> dict:
+        """
+        Adds the comparison dictionary and compares whether to add to a list
+        Args:
+            comparison_dict: the dictionary that needs to be added to
+            comparison: the dictionary to query from
+        Returns:
+            dict: the updated comparison dictionary
+        """
+        for key in list(comparison.keys()):
+            if comparison_dict.get(key) is not None:
+                # Extend the list of comparisons at the condition if there are more found
+                comparison_dict[key].extend(comparison[key])
+            else:
+                comparison_dict[key] = comparison[key]
+        return comparison_dict
+
+    def retrieve_plans(self, query_dict: dict) -> SimplifiedPlan:
         """
             Gets all plans within the current query plan
             Args:
                 query_dict (dict): dictionary that contains the query plan (obtained from executing EXPLAIN query)
-                index (int): index of tree position (default = 0)
-                boom (int): a check in cases where it could go wrong
             Returns:
                 list: a list of tuples that contain information on the entire plan
         """
-
-        # Prevents infinite loop (recursion)
-        if boom > 100000:
-            self.conn.rollback()
-            raise Exception("Exception encountered, infinite recursion detected while retrieving plans")
-
         node = query_dict['Node Type']
         cost = query_dict['Total Cost']
         value = {}
@@ -174,92 +278,41 @@ class QueryProcessor:
         elif query_dict.get('Index Cond') is not None:
             value['Index Cond'] = query_dict['Index Cond']
 
-        # Recursively access each node in the plan to retrieve the plans within
-        plans_list = []
-        if query_dict.get('Plans') is not None:
-            for inner_dict in query_dict['Plans']:
-                new_plan = self.retrieve_plans(inner_dict, index + 1, boom + 1)
-                for tuple_plan in new_plan:
-                    # Append to list once there are plans available
-                    plans_list.append(tuple_plan)
+        return SimplifiedPlan(node, value, cost)
 
-        # Select and place the values into a tuple (indexed by tree level)
-        plans_list.append((node, value, cost, index))
-        return plans_list
+    def compare_query_plan(self, qep: dict, aqp: dict):
+        # Retrieve the current plan and place into a class
+        qep_simple = self.retrieve_plans(qep)
+        aqp_simple = self.retrieve_plans(aqp)
 
-    def compare_query(self, qep, aqp) -> dict:
-        qep_sort = sorted(qep, key=lambda x: x[-1])
-        aqp_sort = sorted(aqp, key=lambda x: x[-1])
+        # Compare the results and check whether they are the same
+        return self.compare_item(qep_simple, aqp_simple), qep_simple.condition
 
-        compare_dict = {}
-
-        for qep_item in qep_sort:
-            compare_string = None
-            for aqp_item in aqp_sort:
-                # If index is the same then compare
-                if qep_item[-1] == aqp_item[-1]:
-                    print(qep_item)
-                    print(aqp_item)
-                    compare_string = self.compare_item(qep_item, aqp_item)
-                    print(compare_string)
-            # Check if there is any string to input
-            if compare_string is not None:
-                values = list(qep_item[1].values())
-                # Use the condition as the hash (key)
-                if len(values) > 0:
-                    hash_value = values[0]
-                    if type(values[0]) is list:
-                        hash_value = values[0][0]
-                    # Place into dictionary
-                    compare_dict[hash_value] = compare_string
-                    continue
-
-        return compare_dict
-
-    def compare_item(self, qep_item, aqp_item):
+    def compare_item(self, qep_item: SimplifiedPlan, aqp_item: SimplifiedPlan):
         # Check whether it is of the same type (Scan / Join)
-        if self.compare_type(qep_item[0], aqp_item[0]):
+        if qep_item.compare_node(aqp_item):
             # If cost is the same, skip and ignore
-            if qep_item[2] == aqp_item[2]:
+            diff = aqp_item.cost_difference(qep_item.cost)
+            if diff == 0:
                 return None
             else:
-                # Check that the keys are different
-                keys = list(aqp_item[1].keys())
-                aqp_values = list(aqp_item[1].values())
-                qep_values = list(qep_item[1].values())
-                aqp_values.sort()
-                qep_values.sort()
-                if qep_values == aqp_values:
-                    return None
-                diff = aqp_item[2] - qep_item[2]
+                # Check if difference is greater
                 if diff < 0:
                     return None
-                if len(aqp_values) != 0:
-                    return f"AQP chooses to do {keys[0]} on {aqp_values[0]} that increases cost by {diff}"
+                keys = list(aqp_item.condition.keys())
+                aqp_values = list(aqp_item.condition.values())
+                qep_values = list(qep_item.condition.values())
+                aqp_values.sort()
+                qep_values.sort()
+                print(diff)
+                # Check that the Node Type are the same
+                if qep_item.compare_type(aqp_item):
+                    if len(aqp_values) > 0:
+                        return f"AQP chooses to do {aqp_item.node} on {aqp_values[0]} that increases cost by {diff}"
+                    if len(qep_values) > 0:
+                        return f"AQP chooses to do {aqp_item.node} on {qep_values[0]} that increases cost by {diff}"
 
         return None
-
-    def compare_type(self, qep: str, aqp: str) -> bool:
-        """
-            Method to check whether it needs to compare the values (Scan / Join)
-            Args:
-                qep (str): QEP string node type
-                aqp (str): AQP string node type
-            Returns:
-                bool: True if the types are equal else false
-        """
-        qep_string = qep.split(" ")
-        aqp_string = aqp.split(" ")
-
-        if len(qep_string) > 1 and len(aqp_string) > 1:
-            print(qep_string[1])
-            print(aqp_string[1])
-            # If the (Scan/ Join/ Loop) conditions match return true
-            if qep_string[1] == aqp_string[1]:
-                return True
-            elif (qep_string[1] == "Loop" and aqp_string[1] == "Join") or (qep_string[1] == "Join" and aqp_string[1] == "Loop"):
-                return True
-        return False
 
 
 def __main__():
