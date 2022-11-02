@@ -26,6 +26,23 @@ def make_italic(string):
     """
     return FontFormat.ITALIC_START + string + FontFormat.ITALIC_END
 
+def retrieve_aqp_annotation(query_plan:dict, comparison:dict):
+    """
+        Checks if any of the node type's query is in the comparison's keys,
+        and returns the AQP comparison annotation. 
+
+        Works because each annotation function is called only when it's relevant plan is retrieved.
+    """
+    query_keys = query_plan.keys()
+    compare_keys = comparison.keys()
+
+    for query_key in query_keys:
+        if(query_plan[query_key] in compare_keys):
+            return comparison[query_key]
+        else:
+            return None
+
+
 def default_annotation(query_plan):
     """
          Default Annotation if none of the node types are identified in the annotation functions listed below
@@ -33,68 +50,128 @@ def default_annotation(query_plan):
     return f"The {make_italic(query_plan['Node Type'])} operation is performed."
 
 
+
 def append_annotation(query_plan, comparison):
     """
         Generate annotation for append
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation combines the results of the child sub-operations."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation combines the results of the child sub-operations. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation combines the results of the child sub-operations."
+
+
 
 def func_scan_annotation(query_plan, comparison):
     """
         Generate annotation for function scan
     """
-    return f"The function {make_italic(query_plan['Function Name'])} is executed and the set of records are returned."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The function {make_italic(query_plan['Function Name'])} is executed and the set of records are returned. {aqp_annotation}"
+    else:
+        return f"The function {make_italic(query_plan['Function Name'])} is executed and the set of records are returned."
+
+
 
 def limit_annotation(query_plan, comparison):
     """
         Generate annotation for limit
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation takes {make_bold(str(query_plan['Plan Rows']))} records and disregard the remaining records."
+    
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation takes {make_bold(str(query_plan['Plan Rows']))} records and disregard the remaining records. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation takes {make_bold(str(query_plan['Plan Rows']))} records and disregard the remaining records."
+
 
 
 def subquery_scan_annotation(query_plan, comparison):
     """
         Generate annotation for subquery scan
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation reads on the results from a subquery."
+    
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation reads on the results from a subquery. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation reads on the results from a subquery."
+
 
 def value_scan_annotation(query_plan, comparison):
     """
         Generate annotation for value scan
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation reads the given constant values from the query."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation reads the given constant values from the query. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation reads the given constant values from the query."
 
 
 def materialize_annotation(query_plan, comparison):
     """
         Generate annotation for materialize
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation stores the results of child operations in memory for faster access by parent operations."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation stores the results of child operations in memory for faster access by parent operations. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation stores the results of child operations in memory for faster access by parent operations."
 
 def nl_join_annotation(query_plan, comparison):
     """
         Generate annotation for Nested Loop Join
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation implements a join or lookup where the first child node is run once, then for every row it produces, its partner is looked up in the second node."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation implements a join or lookup where the first child node is run once, then for every row it produces, its partner is looked up in the second node. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation implements a join or lookup where the first child node is run once, then for every row it produces, its partner is looked up in the second node."
 
 def unique_annotation(query_plan, comparison):
     """
         Generates annotation for unique which removes duplicates
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation removes duplicates from a sorted result set."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation removes duplicates from a sorted result set. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation removes duplicates from a sorted result set."
+    
 
 
 def hash_func_annotation(query_plan, comparison):
     """
         Generates annotation for hash function
     """
-    return f"The {make_italic(query_plan['Node Type'])} function hashes the query rows into memory, for use by its parent operation."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} function hashes the query rows into memory, for use by its parent operation. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} function hashes the query rows into memory, for use by its parent operation."
 
 def gather_merge_annotation(query_plan, comparison):
     """
         Generates annotation for gather merge
     """
-    return f"The {make_italic(query_plan['Node Type'])} operation combines the output table from sub-operations by executing the operation in parallel."
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
+    if aqp_annotation is not None:
+        return f"The {make_italic(query_plan['Node Type'])} operation combines the output table from sub-operations by executing the operation in parallel. {aqp_annotation}"
+    else:
+        return f"The {make_italic(query_plan['Node Type'])} operation combines the output table from sub-operations by executing the operation in parallel."
 
 
 def aggregate_annotation(query_plan, comparison):
@@ -102,6 +179,7 @@ def aggregate_annotation(query_plan, comparison):
     """
         Generates annotation for aggregate
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
 
     # Obtain strategy from query plan
     strategy = query_plan["Strategy"]
@@ -124,7 +202,10 @@ def aggregate_annotation(query_plan, comparison):
         if "Filter" in query_plan:
             result += f" where the tuples are filtered by {make_bold(query_plan['Filter'].replace('::text', ''))}."
 
-        return result
+        if aqp_annotation is not None:
+            return f'{result}. {aqp_annotation}'
+        else:
+            return result
 
     # Hashed strategy
     elif strategy == "Hashed":
@@ -138,11 +219,17 @@ def aggregate_annotation(query_plan, comparison):
 
         result += f"which are then {make_bold('aggregated')} into a bucket given by the hashed key."
 
-        return result
+        if aqp_annotation is not None:
+            return f'{result}. {aqp_annotation}'
+        else:
+            return result
 
     # Plain strategy
     elif strategy == "Plain":
-        return f"The result is {make_bold('aggregated')} with the {make_italic(query_plan['Node Type'])} operation."
+        if aqp_annotation is not None:
+            return f"The result is {make_bold('aggregated')} with the {make_italic(query_plan['Node Type'])} operation. {aqp_annotation}"
+        else:
+            return f"The result is {make_bold('aggregated')} with the {make_italic(query_plan['Node Type'])} operation."
 
     # If the strategy value is neither of the above
     else:
@@ -176,6 +263,9 @@ def group_annotation(query_plan, comparison):
     """
         Generates annotation for group
     """
+
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = f"The {make_italic(query_plan['Node Type'])} operation groups the results from the previous operation together with the following keys: "
 
     # Obtain the attributes that the records are grouped by
@@ -190,13 +280,18 @@ def group_annotation(query_plan, comparison):
         else:
             result += ", "
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 
 def index_scan_annotation(query_plan, comparison):
     """
         Generates annotation for index scan
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = f"The {make_italic(query_plan['Node Type'])} operation scans the index for rows"
 
     # Get the index condition and remove unnecessary strings
@@ -211,13 +306,19 @@ def index_scan_annotation(query_plan, comparison):
     if "Filter" in query_plan:
         result += f" The result is further filtered by {make_bold(query_plan['Filter'].replace('::text', ''))}."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 
 def index_only_scan_annotation(query_plan, comparison):
     """
         Generates annotation for index-only scan
     """
+
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = f"The {make_italic(query_plan['Node Type'])} function is conducted using an index table {make_bold(query_plan['Index Name'])}"
 
     # Get the index condition and remove unnecessary strings
@@ -232,13 +333,18 @@ def index_only_scan_annotation(query_plan, comparison):
     if "Filter" in query_plan:
         result += f" The result is further filtered by {make_bold(query_plan['Filter'].replace('::text', ''))}."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 
 def merge_join_annotation(query_plan, comparison):
     """
         Generates annotation for Merge Join
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = f"The {make_italic(query_plan['Node Type'])} operation joins the results that have been sorted on join keys from sub-operations"
 
     # Get the merge condition and remove unnecessary strings
@@ -253,13 +359,18 @@ def merge_join_annotation(query_plan, comparison):
 
     result += "."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 
 def set_operation_annotation(query_plan, comparison):
     """
         Generates annotation for setOp
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = f"The {make_italic(query_plan['Node Type'])} operation finds the "
 
     # Get the command
@@ -275,12 +386,17 @@ def set_operation_annotation(query_plan, comparison):
 
     result += " in records between the two previously scanned tables."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 def sequential_scan_annotation(query_plan, comparison):
     """
         Generates annotation for sequential scan
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = f"The {make_italic(query_plan['Node Type'])} operation performs a scan on relation "
 
     # Get the relation name from query plan
@@ -298,7 +414,10 @@ def sequential_scan_annotation(query_plan, comparison):
 
     result += "."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 
 
@@ -306,6 +425,8 @@ def sort_annotation(query_plan, comparison):
     """
         Generates annotation for sort
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+
     result = (
         f"The {make_italic(query_plan['Node Type'])} operation sorts the rows "
     )
@@ -330,12 +451,17 @@ def sort_annotation(query_plan, comparison):
 
     result += "."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 def hash_join_annotation(query_plan, comparison):
     """
         Generates annotation for hash join
     """
+    aqp_annotation = retrieve_aqp_annotation(query_plan, comparison)
+    
     result = f"The {make_italic(query_plan['Node Type'])} operation joins the results from the previous operations using a hash {make_bold(query_plan['Join Type'])} {make_bold('Join')}"
 
     # Get the hash condition and remove unnecessary strings
@@ -344,7 +470,10 @@ def hash_join_annotation(query_plan, comparison):
 
     result += "."
 
-    return result
+    if aqp_annotation is not None:
+        return f"{result}. {aqp_annotation}"
+    else:
+        return result
 
 
 class Annotation(object):
