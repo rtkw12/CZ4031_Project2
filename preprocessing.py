@@ -233,7 +233,7 @@ class QueryProcessor:
                 elif type(condition) is list:
                     hash_value = condition[0][0]
             # Place into dictionary
-            comparisons[hash_value] = [comparison_string]
+            comparisons[hash_value] = comparison_string
 
         return comparisons
 
@@ -248,8 +248,10 @@ class QueryProcessor:
         """
         for key in list(comparison.keys()):
             if comparison_dict.get(key) is not None:
-                # Extend the list of comparisons at the condition if there are more found
-                comparison_dict[key].extend(comparison[key])
+                # Writes the new comparison to the back of the current string
+                cur_comparison = comparison_dict[key]
+                new_comparison = cur_comparison + comparison[key]
+                comparison_dict[key] = new_comparison
             else:
                 comparison_dict[key] = comparison[key]
         return comparison_dict
@@ -308,9 +310,9 @@ class QueryProcessor:
                 # Check that the Node Type are the same
                 if qep_item.compare_type(aqp_item):
                     if len(aqp_values) > 0:
-                        return f"AQP chooses to do {aqp_item.node} on {aqp_values[0]} that increases cost by {diff}"
+                        return f"AQP chooses to do {aqp_item.node} on {aqp_values[0]} that increases cost by {diff}."
                     if len(qep_values) > 0:
-                        return f"AQP chooses to do {aqp_item.node} on {qep_values[0]} that increases cost by {diff}"
+                        return f"AQP chooses to do {aqp_item.node} on {qep_values[0]} that increases cost by {diff}."
 
         return None
 

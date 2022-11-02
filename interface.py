@@ -33,7 +33,7 @@ class Node:
         self.plans = []
         for key in query_plan:
             setattr(self, key.lower().replace(" ", "_"), query_plan.get(key))
-        explainer = Annotation.annotation_dict.get(self.node_type, defaultAnnotation)
+        explainer = Annotation.annotation_dict.get(self.node_type, default_annotation)
         self.explanation = explainer(query_plan, comparison)
 
     def __str__(self):
