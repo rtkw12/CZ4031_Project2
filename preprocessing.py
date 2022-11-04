@@ -160,7 +160,6 @@ class QueryProcessor:
         comparison_dict = self.add_comparisons(comparison_dict, comparison1)
         comparison_dict = self.add_comparisons(comparison_dict, comparison2)
 
-        print(comparison_dict)
         return QueryPlan(qep_plan, comparison_dict)
 
     @single_transaction
@@ -318,12 +317,15 @@ class QueryProcessor:
 
 
 def __main__():
-    query_processor.explain(
+    plan1 = query_processor.explain(
         "SELECT l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate, o_shippriority " +
         "FROM customer, orders, lineitem " +
         "WHERE c_mktsegment = 'BUILDING' AND c_custkey = o_custkey AND l_orderkey = o_orderkey AND o_orderdate < date '1995-03-15' AND l_shipdate > date '1995-03-15' " +
         "GROUP BY l_orderkey, o_orderdate, o_shippriority " +
         "ORDER BY revenue desc, o_orderdate LIMIT 20")
+
+    print(plan1.explanation)
+
     return
 
 

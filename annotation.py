@@ -33,14 +33,14 @@ def retrieve_aqp_annotation(query_plan:dict, comparison:dict):
 
         Works because each annotation function is called only when it's relevant plan is retrieved.
     """
-    query_keys = query_plan.keys()
-    compare_keys = comparison.keys()
+    query_values = list(query_plan.values())
+    compare_keys = list(comparison.keys())
 
-    for query_key in query_keys:
-        if(query_plan[query_key] in compare_keys):
-            return comparison[query_key]
-        else:
-            return None
+    for query_value in query_values:
+        if query_value in compare_keys:
+            return comparison.get(query_value)
+
+    return None
 
 
 def default_annotation(query_plan):
