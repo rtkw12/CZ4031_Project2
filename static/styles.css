@@ -1,12 +1,12 @@
 body {
-  background-color: #2d3436;
-  color: #ecf0f1;
+  background-color: #ffbb00;
+  color: #02782c;
   line-height: 2;
-  text-align: justify;
+  text-align: center;
 }
 
 hr {
-  border-top: 2px solid #ecf0f1;
+  border-top: 2px solid #02782c;
 }
 
 img {
@@ -24,8 +24,8 @@ textarea {
 }
 
 .code {
-  background: #eee;
-  color: #b71540;
+  background: #b71540;
+  color: #000000;
   border-radius: 5px;
   padding: 5px 15px 5px 15px;
   margin: 30px auto 30px auto;
