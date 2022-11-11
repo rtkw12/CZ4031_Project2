@@ -6,7 +6,7 @@ from preprocessing import *
 from annotation import *
 
 app = Flask(__name__)
-
+cwd = os.getcwd()
 # GET endpoint for '/'
 @app.route("/", methods=["GET"])
 def home():
@@ -39,7 +39,7 @@ def explain():
 
     html_context = {
         "query": query,
-        "graph": plan.save_graph_file(),
+        "graph": plan.save_graph_file(cwd),
         "explanation": plan.explanation,
         "total_cost": int(plan.total_cost),
         "total_plan_rows": int(plan.plan_rows),

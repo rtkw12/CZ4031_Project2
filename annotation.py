@@ -203,7 +203,7 @@ def aggregate_annotation(query_plan, comparison):
             result += f" where the tuples are filtered by {make_bold(query_plan['Filter'].replace('::text', ''))}."
 
         if aqp_annotation is not None:
-            return f'{result}. {aqp_annotation}'
+            return f'{result} {aqp_annotation}'
         else:
             return result
 
@@ -220,7 +220,7 @@ def aggregate_annotation(query_plan, comparison):
         result += f"which are then {make_bold('aggregated')} into a bucket given by the hashed key."
 
         if aqp_annotation is not None:
-            return f'{result}. {aqp_annotation}'
+            return f'{result} {aqp_annotation}'
         else:
             return result
 
@@ -281,7 +281,7 @@ def group_annotation(query_plan, comparison):
             result += ", "
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -307,7 +307,7 @@ def index_scan_annotation(query_plan, comparison):
         result += f" The result is further filtered by {make_bold(query_plan['Filter'].replace('::text', ''))}."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -334,7 +334,7 @@ def index_only_scan_annotation(query_plan, comparison):
         result += f" The result is further filtered by {make_bold(query_plan['Filter'].replace('::text', ''))}."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -360,7 +360,7 @@ def merge_join_annotation(query_plan, comparison):
     result += "."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -387,7 +387,7 @@ def set_operation_annotation(query_plan, comparison):
     result += " in records between the two previously scanned tables."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -415,7 +415,7 @@ def sequential_scan_annotation(query_plan, comparison):
     result += "."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -452,7 +452,7 @@ def sort_annotation(query_plan, comparison):
     result += "."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 
@@ -471,7 +471,7 @@ def hash_join_annotation(query_plan, comparison):
     result += "."
 
     if aqp_annotation is not None:
-        return f"{result}. {aqp_annotation}"
+        return f"{result} {aqp_annotation}"
     else:
         return result
 

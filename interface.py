@@ -16,8 +16,6 @@ class Config:
         self.POSTGRES_PASSWORD = "password123"
         self.FLASK_ENV = "development"
 
-        self.project_root = os.getcwd()
-
 class Node:
     def __init__(self, query_plan, comparison):
         """Initialises a node with its relevant query plan.
@@ -133,7 +131,7 @@ class QueryPlan:
             total_cost += node.total_cost
         return total_cost
 
-    def save_graph_file(self) -> str:
+    def save_graph_file(self, cwd) -> str:
         """Renders the graph and save the figure as an .png file
         in the 'static' folder.
         The frontend then renders the image on the UI to visualise the QEP.
@@ -143,7 +141,7 @@ class QueryPlan:
         """
         graph_name = f"qep_{str(time.time())}.png"
         dev_config = Config()
-        file_name = os.path.join(dev_config.project_root, "static", graph_name)
+        file_name = os.path.join(cwd, "static", graph_name)
         plot_formatter_position = get_tree_node_pos(self.graph, self.root)
         node_labels = {x: str(x) for x in self.graph.nodes}
         nx.draw(
