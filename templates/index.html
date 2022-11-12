@@ -1,20 +1,20 @@
 {% extends "base.html" %} {% block title %} Plan {% endblock %} {% block content
 %}
 
-<div class="px-5">
+<div class="px-5" style="font-family: cursive">
   <div class="mt-3">
     <div>
       <form method="POST" action="/result">
-        <h3>1️⃣ Input Query</h3>
+        <h3>1️⃣ Type your Query here</h3>
         <textarea
           class="form-control"
           id="queryTextArea"
           name="queryText"
           rows="5"
-          placeholder="SELECT * FROM customer;"
+          placeholder="SELECT..."
         ></textarea>
         <div class="text-center">
-          <button id="btnFetch" type="submit" class="btn btn-primary">
+          <button style="background-color: #02782c;border-radius: 50%;" id="btnFetch" type="submit" class="btn btn-Dark">
             Submit
           </button>
         </div>
@@ -26,18 +26,18 @@
       {% if query %}
       <div class="code">{{query}}</div>
       {% else %}
-      <span>Submit your query above to begin</span>
+      <span>Waiting for submission...</span>
       {% endif %}
       <hr />
-      <h3>3️⃣ Key Metrics</h3>
+      <h3>3️⃣ Query Info</h3>
       <ul>
-        <li>Cost: {{total_cost}}</li>
-        <li>Number of index scans: {{total_index_scan}}</li>
-        <li>Number of sequential scans: {{total_seq_scan}}</li>
-        <li>Number of rows: {{total_plan_rows}}</li>
+        <li>Total Cost: {{total_cost}}</li>
+        <li>Total no. of index scans: {{total_index_scan}}</li>
+        <li>Total no. of sequential scans: {{total_seq_scan}}</li>
+        <li>Total no. of rows: {{total_plan_rows}}</li>
       </ul>
       <hr />
-      <h3 class="mt-3">4️⃣ Optimal QEP - Explanation</h3>
+      <h3 class="mt-3">4️⃣ Logic behind Optimal QEP</h3>
       {% if total_cost %}
       <p class="mt-3">Total cost: {{total_cost}}</p>
       {% endif %} {% if explanation %}
